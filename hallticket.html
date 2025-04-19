@@ -54,17 +54,26 @@
       });
     }
 
+    const qrData = JSON.stringify({
+      name: student.name,
+      rollNumber: student.rollNumber
+    });
     new QRCode(document.getElementById("qrCode"), {
-      text: student.qrCode || JSON.stringify({
-        name: student.name,
-        rollNumber: student.rollNumber,
-        subjects: student.subjects || []
-      }),
+      text: qrData,
       width: 128,
       height: 128,
       colorDark: "#581C87",
       colorLight: "#FFFFFF"
     });
+
+    // Update QR code in database
+    fetch('http://localhost:5000/api/update-qrcode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rollNumber: student.rollNumber, qrCode: qrData })
+    }).then(response => response.json())
+      .then(data => console.log('QR Code updated:', data))
+      .catch(error => console.error('Error updating QR Code:', error));
 
     async function downloadPDF() {
       const { jsPDF } = window.jspdf;
