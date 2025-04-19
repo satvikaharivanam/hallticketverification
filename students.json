@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Indhu",
+        "rollNumber": "23241A05R8",
+        "photo": "https://via.placeholder.com/150",
+        "subjects": [
+            { "name": "Mathematics", "date": "2025-04-10" },
+            { "name": "Physics", "date": "2025-04-12" },
+            { "name": "Chemistry", "date": "2025-04-14" }
+        ]
+    },
+    {
+        "name": "Harshitha",
+        "rollNumber": "23241A05P7",
+        "photo": "https://via.placeholder.com/150",
+        "subjects": [
+            { "name": "Biology", "date": "2025-04-11" },
+            { "name": "English", "date": "2025-04-13" },
+            { "name": "History", "date": "2025-04-15" }
+        ]
+    },
+    {
+        "name": "Sathwika",
+        "rollNumber": "23241A05Q7",
+        "photo": "https://via.placeholder.com/150",
+        "subjects": [
+            { "name": "Biology", "date": "2025-04-11" },
+            { "name": "English", "date": "2025-04-13" },
+            { "name": "History", "date": "2025-04-15" }
+        ]
+    }
+]
