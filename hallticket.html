@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hall Ticket</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+    @media print { .no-print { display: none; } }
+  </style>
+</head>
+<body class="bg-purple-50 text-purple-900">
+  <h1 class="text-3xl font-bold text-center text-purple-700 mb-6">Hall Ticket</h1>
+  <div id="ticket" class="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
+    <div class="text-center mb-4">
+      <img id="studentPhoto" src="" alt="Student Photo" class="w-32 h-32 rounded-full object-cover mx-auto" crossorigin="anonymous">
+    </div>
+    <p class="text-lg"><strong>Name:</strong> <span id="displayName"></span></p>
+    <p class="text-lg"><strong>Roll Number:</strong> <span id="displayRoll"></span></p>
+    <h3 class="text-xl font-semibold mt-4">Examination Schedule</h3>
+    <table class="w-full border-collapse mt-2">
+      <thead>
+        <tr class="bg-purple-100">
+          <th class="border border-purple-300 p-2">Subject</th>
+          <th class="border border-purple-300 p-2">Date</th>
+        </tr>
+      </thead>
+      <tbody id="subjectTable"></tbody>
+    </table>
+    <div class="qr-code text-center mt-4">
+      <div id="qrCode"></div>
+    </div>
+  </div>
+  <div class="mt-4 text-center no-print">
+    <button onclick="downloadPDF()" class="bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-800">Download Hall Ticket</button>
+  </div>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const student = JSON.parse(urlParams.get("student"));
+    document.getElementById("studentPhoto").src = `http://localhost:5000${student.photo}`;
+    document.getElementById("displayName").textContent = student.name;
+    document.getElementById("displayRoll").textContent = student.rollNumber;
+
+    const subjectTable = document.getElementById("subjectTable");
+    if (Array.isArray(student.subjects)) {
+      student.subjects.forEach(subject => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td class="border border-purple-300 p-2">${subject.name}</td><td class="border border-purple-300 p-2">${subject.date}</td>`;
+        subjectTable.appendChild(row);
+      });
+    }
+
+    new QRCode(document.getElementById("qrCode"), {
+      text: student.qrCode || JSON.stringify({
+        name: student.name,
+        rollNumber: student.rollNumber,
+        subjects: student.subjects || []
+      }),
+      width: 128,
+      height: 128,
+      colorDark: "#581C87",
+      colorLight: "#FFFFFF"
+    });
+
+    async function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const ticket = document.getElementById("ticket");
+      const canvas = await html2canvas(ticket, {
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#FFFFFF'
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF();
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const ticketWidth = pdfWidth * 0.7;
+      const ticketHeight = (canvas.height * ticketWidth) / canvas.width;
+      const x = (pdfWidth - ticketWidth) / 2;
+      const y = 20;
+      pdf.addImage(imgData, "PNG", x, y, ticketWidth, ticketHeight);
+      pdf.save(`${student.rollNumber}_hallticket.pdf`);
+    }
+  </script>
+</body>
+</html>
