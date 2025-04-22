@@ -75,24 +75,51 @@
       .then(data => console.log('QR Code updated:', data))
       .catch(error => console.error('Error updating QR Code:', error));
 
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const ticket = document.getElementById("ticket");
-      const canvas = await html2canvas(ticket, {
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#FFFFFF'
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const ticketWidth = pdfWidth * 0.7;
-      const ticketHeight = (canvas.height * ticketWidth) / canvas.width;
-      const x = (pdfWidth - ticketWidth) / 2;
-      const y = 20;
-      pdf.addImage(imgData, "PNG", x, y, ticketWidth, ticketHeight);
-      pdf.save(`${student.rollNumber}_hallticket.pdf`);
+      async function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const ticket = document.getElementById("ticket");
+  const canvas = await html2canvas(ticket, {
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: '#FFFFFF'
+  });
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF();
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const ticketWidth = pdfWidth * 0.7;
+  const ticketHeight = (canvas.height * ticketWidth) / canvas.width;
+  const x = (pdfWidth - ticketWidth) / 2;
+  const y = 20;
+  pdf.addImage(imgData, "PNG", x, y, ticketWidth, ticketHeight);
+
+  pdf.save(`${student.rollNumber}_hallticket.pdf`);
+
+  try {
+    const response = await fetch('http://localhost:5000/api/send-email', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: student.email, // Ensure this is correctly populated
+    subject: 'Your Hall Ticket', // Ensure this is correctly populated
+    message: `Dear ${student.name},\n\nYour hallticket has been successfully downloaded.Roll Number: ${student.rollNumber}.\n\nBest regards,\nGRIET` // Ensure this is correctly populated
+  })
+});
+
+    if (response.ok) {
+      alert('Hall ticket details sent to your email!');
+    } else {
+      const errorData = await response.json();
+      alert('Failed to send email: ' + errorData.error);
     }
+  } catch (error) {
+    console.error('Error sending email:', error);
+    alert('Something went wrong while sending the email.');
+  }
+}
+
+
   </script>
 </body>
 </html>
