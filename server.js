@@ -7,12 +7,15 @@ const fs = require('fs');
 const { Parser } = require('json2csv');
 const Student = require('./models/Student');
 const config = require('./config');
+const nodemailer = require('nodemailer');
+require('dotenv').config(); // Load environment variables
+const cron = require('node-cron'); // Added for attendance reset
 
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads')));
 
 mongoose.connect(config.mongoURI, {
   useNewUrlParser: true,
@@ -83,6 +86,53 @@ app.post('/api/update-qrcode', async (req, res) => {
   }
 });
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false // Disable certificate validation (for testing)
+  }
+});
+
+// Schedule daily attendance reset at midnight
+cron.schedule('0 0 * * *', async () => {
+  try {
+    console.log('Resetting attendance at', new Date().toISOString());
+    await Student.updateMany({}, { $set: { attendance: [] } });
+    console.log('Attendance reset successfully for all students');
+  } catch (error) {
+    console.error('Error resetting attendance:', error);
+  }
+});
+
+// Email sending route
+app.post('/api/send-email', async (req, res) => {
+  const { email, subject, message } = req.body;
+
+  if (!email || !subject || !message) {
+    return res.status(400).json({ error: 'Email, subject, and message are required' });
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: subject,
+    text: message
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent:', mailOptions);
+    res.json({ success: true, message: 'Email sent successfully' });
+  } catch (error) {
+    console.error('Full error:', error);  // 👈 Logs the real cause
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ✅ Attendance + CSV
 app.post('/api/mark-attendance', async (req, res) => {
   const { rollNumber, subject } = req.body;
@@ -99,16 +149,12 @@ app.post('/api/mark-attendance', async (req, res) => {
       return res.status(404).json({ error: "Subject not found" });
     }
 
-    // Check if already marked for this student
-    console.log('Current date:', new Date().toISOString().split('T')[0]);
-    console.log('Current attendance data:', student.attendance);
     const attendance = student.attendance.find((att) => att.subject === subject);
     if (attendance) {
       console.log(`❌ Attendance already marked for ${subject} by ${rollNumber}`);
       return res.status(400).json({ error: "Attendance already marked" });
     }
 
-    // Mark attendance
     student.attendance.push({
       subject,
       status: true,
@@ -118,35 +164,40 @@ app.post('/api/mark-attendance', async (req, res) => {
     await student.save();
     console.log('Attendance updated:', student.attendance);
 
-    // Create or append to CSV at specified path
-    const today = new Date().toISOString().split('T')[0]; // e.g., "2025-04-19"
+    const today = new Date().toISOString().split('T')[0];
     const fileName = `${today}_${subject}.csv`;
-    const csvPath = 'C:\\Users\\Administrator\\Desktop\\hall ticket verification\\' + fileName;
+    const csvPath = path.join(__dirname, 'attendance', fileName); // Dynamically create path
     const attendanceData = [
       { rollNumber, name: student.name, subject, status: 'Present', date: today }
     ];
 
-    // Ensure directory exists
-    const dir = 'C:\\Users\\Administrator\\Desktop\\hall ticket verification';
+    const dir = path.join(__dirname, 'attendance');
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    try {
-      if (!fs.existsSync(csvPath)) {
-        const parser = new Parser();
-        const csv = parser.parse(attendanceData);
-        fs.writeFileSync(csvPath, csv);
-        console.log(`📝 New CSV created at: ${csvPath}`);
-      } else {
-        const parser = new Parser({ header: false });
-        const csvLine = parser.parse(attendanceData);
-        fs.appendFileSync(csvPath, '\n' + csvLine);
-        console.log(`📝 Appended to CSV at: ${csvPath}`);
+    const parser = new Parser({ header: !fs.existsSync(csvPath) });
+    const csvLine = parser.parse(attendanceData);
+    fs.appendFileSync(csvPath, csvLine);
+    console.log(`📝 Appended to CSV at: ${csvPath}`);
+
+    // Send email notification
+    console.log('Attempting to send email for student:', student.rollNumber);
+    if (student.email) {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: student.email,
+        subject: 'Attendance Marked',
+        text: `Dear ${student.name},\n\nYour attendance for ${subject} has been marked on ${today}.\nRoll Number: ${rollNumber}\n\nRegards,\nExam Administration`
+      };
+      try {
+        await transporter.sendMail(mailOptions);
+        console.log('Email sent to:', student.email);
+      } catch (emailError) {
+        console.error('Failed to send email to', student.email, ':', emailError.message);
       }
-    } catch (fsError) {
-      console.error(`❌ CSV write error: ${fsError.message}`);
-      return res.status(500).json({ error: 'Failed to write CSV file', details: fsError.message });
+    } else {
+      console.log('No email found for student:', student.rollNumber);
     }
 
     return res.status(200).json({ success: true, message: `Attendance marked for ${student.name}` });
