@@ -17,6 +17,8 @@ const studentSchema = new mongoose.Schema({
   subjects: [subjectSchema],
   attendance: [attendanceSchema],
   qrCode: String,
+  email: String, // Added email field
+  photo: String, // Added photo field to match document
 }, { collection: 'users' });
 
 module.exports = mongoose.model('Student', studentSchema);
