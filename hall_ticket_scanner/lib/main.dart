@@ -35,7 +35,7 @@ class _SubjectSelectorPageState extends State<SubjectSelectorPage> {
 
   Future<void> _fetchSubjects() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.0.225:5000/api/subjects'));
+      final response = await http.get(Uri.parse('http://192.168.114.201:5000/api/subjects'));
       if (response.statusCode == 200) {
         setState(() {
           subjects = List<String>.from(json.decode(response.body));
@@ -112,6 +112,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
   void _onScan(BarcodeCapture barcodeCapture) async {
     if (!_isScanning || barcodeCapture.barcodes.isEmpty) return;
     setState(() => _isScanning = false);
+    await _controller.stop(); // Pause scanner
     debugPrint('📸 QR Code Detected!');
     try {
       final raw = barcodeCapture.barcodes.first.rawValue;
@@ -129,9 +130,9 @@ class _QRScannerPageState extends State<QRScannerPage> {
         _showDialog('Error', 'Invalid QR Code data');
         return;
       }
-      debugPrint('🔍 Sending to server: rollNumber=$rollNumber, subject=${widget.subject}');
+      debugPrint('🔍 Sending to server: rollNsumber=$rollNumber, subject=${widget.subject}');
       final response = await http.post(
-        Uri.parse('http://192.168.0.225:5000/api/mark-attendance'),
+        Uri.parse('http://192.168.114.201:5000/api/mark-attendance'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'rollNumber': rollNumber, 'subject': widget.subject}),
       );
@@ -141,7 +142,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
         final body = json.decode(response.body);
         final message = body['message'];
         final today = DateTime.now().toIso8601String().split('T')[0];
-        _showDialog('Success', '$message\nCSV file created/updated at: /uploads/${today}_${widget.subject}.csv');
+        _showDialog('Success', '$message\nCSV file created/updated at: /Uploads/${today}_${widget.subject}.csv');
       } else {
         debugPrint('❌ Server error: ${response.statusCode}, ${response.body}');
         _showDialog('Error', 'Server error: ${response.body}');
@@ -149,8 +150,6 @@ class _QRScannerPageState extends State<QRScannerPage> {
     } catch (e) {
       debugPrint('❌ Scan error: $e');
       _showDialog('Error', 'Invalid QR or system error.');
-    } finally {
-      setState(() => _isScanning = true);
     }
   }
 
@@ -166,7 +165,10 @@ class _QRScannerPageState extends State<QRScannerPage> {
             child: Text('OK'),
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              setState(() {}); // Force UI refresh
+              setState(() {
+                _isScanning = true;
+                _controller.start(); // Resume scanner
+              });
             },
           ),
         ],
@@ -201,5 +203,11 @@ class _QRScannerPageState extends State<QRScannerPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
