@@ -12,7 +12,38 @@ class HallTicketScannerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hall Ticket Scanner',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primaryColor: Color(0xFF64748B), // slate-500
+        scaffoldBackgroundColor: Colors.white,
+        textTheme: TextTheme(
+          bodyMedium: TextStyle(color: Color(0xFF334155)), // slate-700
+          titleLarge: TextStyle(color: Color(0xFF64748B)), // slate-500
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF64748B), // slate-500
+            foregroundColor: Color(0xFF475569), // slate-600 on press
+            textStyle: TextStyle(color: Colors.white),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Color(0xFF64748B), // slate-500
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFFE2E8F0)), // slate-200
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFFE2E8F0)), // slate-200
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFFE2E8F0)), // slate-200
+          ),
+          labelStyle: TextStyle(color: Color(0xFF334155)), // slate-700
+        ),
+      ),
       home: SubjectSelectorPage(),
     );
   }
@@ -26,6 +57,7 @@ class SubjectSelectorPage extends StatefulWidget {
 class _SubjectSelectorPageState extends State<SubjectSelectorPage> {
   List<String> subjects = [];
   String? selectedSubject;
+  final TextEditingController _subjectController = TextEditingController();
 
   @override
   void initState() {
@@ -52,47 +84,178 @@ class _SubjectSelectorPageState extends State<SubjectSelectorPage> {
     }
   }
 
+  Future<void> _addSubject() async {
+    String newSubject = _subjectController.text.trim();
+    if (newSubject.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a subject name')),
+      );
+      return;
+    }
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.114.201:5000/api/subjects'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'subject': newSubject}),
+      );
+      if (response.statusCode == 201) {
+        setState(() {
+          if (!subjects.contains(newSubject)) {
+            subjects.add(newSubject);
+          }
+          _subjectController.clear();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Subject added successfully')),
+        );
+      } else {
+        debugPrint('Failed to add subject, status: ${response.statusCode}, body: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add subject: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error adding subject: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding subject')),
+      );
+    }
+  }
+
+  Future<void> _deleteSubject(String subject) async {
+    if (subject == selectedSubject) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot delete the currently selected subject')),
+      );
+      return;
+    }
+    try {
+      final response = await http.delete(
+        Uri.parse('http://192.168.114.201:5000/api/subjects/$subject'),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          subjects.remove(subject);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Subject deleted successfully')),
+        );
+      } else {
+        debugPrint('Failed to delete subject, status: ${response.statusCode}, body: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete subject: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error deleting subject: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting subject')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Select Subject')),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Choose the subject to start scanning:', style: TextStyle(fontSize: 16)),
-          SizedBox(height: 20),
-          DropdownButton<String>(
-            value: selectedSubject,
-            hint: Text('Select a subject'),
-            onChanged: (value) {
-              setState(() {
-                selectedSubject = value;
-              });
-            },
-            items: subjects.map((subject) {
-              return DropdownMenuItem<String>(
-                value: subject,
-                child: Text(subject),
-              );
-            }).toList(),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: selectedSubject == null
-                ? null
-                : () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => QRScannerPage(subject: selectedSubject!),
+      appBar: AppBar(
+        title: Text('Select Subject'),
+        backgroundColor: Color(0xFF64748B), // slate-500
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Choose the subject to start scanning:',
+                style: TextStyle(fontSize: 16, color: Color(0xFF334155)), // slate-700
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              DropdownButton<String>(
+                value: selectedSubject,
+                hint: Text('Select a subject', style: TextStyle(color: Color(0xFF334155))), // slate-700
+                isExpanded: true,
+                onChanged: (value) {
+                  setState(() {
+                    selectedSubject = value;
+                  });
+                },
+                items: subjects.map((subject) {
+                  return DropdownMenuItem<String>(
+                    value: subject,
+                    child: Container(
+                      color: Color(0xFFCBD5E1), // slate-300
+                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              subject,
+                              style: TextStyle(color: Color(0xFF334155)), // slate-700
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, size: 20, color: Colors.red),
+                            onPressed: () => _deleteSubject(subject),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-            child: Text('Start Scanning'),
+                    ),
+                  );
+                }).toList(),
+                underline: Container(
+                  height: 2,
+                  color: Color(0xFFE2E8F0), // slate-200
+                ),
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _subjectController,
+                      decoration: InputDecoration(
+                        labelText: 'Add New Subject',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: _addSubject,
+                    child: Text('Add'),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: selectedSubject == null
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => QRScannerPage(subject: selectedSubject!),
+                          ),
+                        );
+                      },
+                child: Text('Start Scanning'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _subjectController.dispose();
+    super.dispose();
   }
 }
 
@@ -158,8 +321,16 @@ class _QRScannerPageState extends State<QRScannerPage> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: Text(title),
-        content: SingleChildScrollView(child: Text(message)),
+        title: Text(
+          title,
+          style: TextStyle(color: Color(0xFF64748B)), // slate-500
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            message,
+            style: TextStyle(color: Color(0xFF334155)), // slate-700
+          ),
+        ),
         actions: [
           TextButton(
             child: Text('OK'),
@@ -188,9 +359,11 @@ class _QRScannerPageState extends State<QRScannerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Scanner - ${widget.subject}'),
+        backgroundColor: Color(0xFF64748B), // slate-500
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.edit),
+            icon: Icon(Icons.edit, color: Color(0xFFE2E8F0)), // slate-200
             tooltip: 'Change Subject',
             onPressed: _changeSubject,
           ),

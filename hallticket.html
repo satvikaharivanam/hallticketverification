@@ -1,125 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hall Ticket</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Poppins', sans-serif; }
     @media print { .no-print { display: none; } }
   </style>
 </head>
-<body class="bg-purple-50 text-purple-900">
-  <h1 class="text-3xl font-bold text-center text-purple-700 mb-6">Hall Ticket</h1>
-  <div id="ticket" class="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
-    <div class="text-center mb-4">
-      <img id="studentPhoto" src="" alt="Student Photo" class="w-32 h-32 rounded-full object-cover mx-auto" crossorigin="anonymous">
+<body class="bg-white text-slate-700 min-h-screen">
+  <!-- Navigation Bar -->
+  <nav class="bg-slate-500 text-white fixed w-full top-0 z-50 shadow-md">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center">
+        <img src="/Uploads/logo.png" alt="Institute Logo" class="h-10 mr-3">
+        <span class="text-xl font-semibold">Hall Ticket System</span>
+      </div>
+      <div class="flex space-x-6">
+        <a href="admin.html" class="hover:text-slate-200 transition">Home</a>
+        <a href="admin-login.html" class="hover:text-slate-200 transition">Admin</a>
+        <a href="#contact" class="hover:text-slate-200 transition">Contact</a>
+      </div>
     </div>
-    <p class="text-lg"><strong>Name:</strong> <span id="displayName"></span></p>
-    <p class="text-lg"><strong>Roll Number:</strong> <span id="displayRoll"></span></p>
-    <h3 class="text-xl font-semibold mt-4">Examination Schedule</h3>
-    <table class="w-full border-collapse mt-2">
-      <thead>
-        <tr class="bg-purple-100">
-          <th class="border border-purple-300 p-2">Subject</th>
-          <th class="border border-purple-300 p-2">Date</th>
-        </tr>
-      </thead>
-      <tbody id="subjectTable"></tbody>
-    </table>
-    <div class="qr-code text-center mt-4">
-      <div id="qrCode"></div>
+  </nav>
+
+  <!-- Hall Ticket -->
+  <div class="container mx-auto p-4 pt-20">
+    <h1 class="text-3xl font-bold text-center text-slate-500 mb-6">Hall Ticket</h1>
+    <div id="ticket" class="bg-white p-4 rounded-lg shadow-lg max-w-2xl mx-auto flex flex-col border-4 border-slate-500">
+      <!-- Institute Header, Exam Details, Center -->
+      <div class="text-center mb-2">
+        <h2 class="text-lg font-bold text-slate-500">Gokaraju Rangaraju Institute of Engineering and Technology</h2>
+        <p class="text-xs text-slate-700">Bachupally, Kukatpally, Hyderabad-500090. (Autonomous)</p>
+        <p class="text-xs text-slate-700">Tel: +91 7207344440 / 7207714441, URL: www.griet.ac.in</p>
+        <p class="text-xs font-semibold mt-1">II B.Tech I Sem (GR22), Computer Science and Engineering</p>
+        <p class="text-xs mt-2"><strong>Center:</strong> Gokaraju Rangaraju Institute of Engineering & Technology</p>
+      </div>
+
+      <!-- Main Content: Candidate Details/Subjects on Left, Photo/QR on Right -->
+      <div class="flex flex-row mb-2">
+        <!-- Left: Candidate Details and Subjects -->
+        <div class="flex-1">
+          <!-- Candidate Details -->
+          <div class="mb-2">
+            <p class="text-sm font-semibold text-slate-500">Hall Ticket</p>
+            <p class="text-sm"><strong>1. Name of the Candidate:</strong> <span id="displayName">[Name Not Loaded]</span></p>
+            
+            <p class="text-sm mt-0.5"><strong>3. H.T. No.:</strong> 23241A05P7</p>
+            <p class="text-sm mt-0.5"><strong>4. Month & Year of Examination:</strong> December/January, 2024</p>
+            <p class="text-sm mt-0.5"><strong>5. Regular/Supplementary:</strong> Regular</p>
+          </div>
+
+          <!-- Subjects Section -->
+          <div>
+            <h3 class="text-base font-semibold text-slate-500 mb-1">List of Subjects Registered</h3>
+            <div id="theoryTables" class="flex flex-col space-y-2">
+              <!-- Theory tables will be dynamically added here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Photo and QR Code -->
+        <div class="flex flex-col items-end">
+          <img id="studentPhoto" src="" alt="Student Photo" class="w-16 h-16 rounded-lg object-cover mb-1" crossorigin="anonymous">
+          <div id="qrCode"></div>
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <div class="flex justify-between text-xs mt-4">
+        <p>Signature of the Candidate</p>
+        <p>Controller of Examinations</p>
+      </div>
+    </div>
+    <div class="mt-2 text-center no-print">
+      <button onclick="downloadPDF()" class="bg-slate-500 text-white px-3 py-1 rounded hover:bg-slate-600 transition duration-200">Download Hall Ticket</button>
+      <p id="downloadError" class="text-red-600 mt-2 hidden">Failed to download PDF. Please check the console for errors.</p>
+      <a id="manualDownload" class="text-slate-600 mt-2 hidden" href="#" download>Click here to download manually</a>
     </div>
   </div>
-  <div class="mt-4 text-center no-print">
-    <button onclick="downloadPDF()" class="bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-800">Download Hall Ticket</button>
-  </div>
+
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const student = JSON.parse(urlParams.get("student"));
-    document.getElementById("studentPhoto").src = `http://localhost:5000${student.photo}`;
-    document.getElementById("displayName").textContent = student.name;
-    document.getElementById("displayRoll").textContent = student.rollNumber;
-
-    const subjectTable = document.getElementById("subjectTable");
-    if (Array.isArray(student.subjects)) {
-      student.subjects.forEach(subject => {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td class="border border-purple-300 p-2">${subject.name}</td><td class="border border-purple-300 p-2">${subject.date}</td>`;
-        subjectTable.appendChild(row);
+    // Debug nav link clicks
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        console.log('Nav link clicked:', link.href);
       });
+    });
+
+    // Load student data
+    let student;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const studentData = urlParams.get("student");
+      console.log("Raw student data from URL:", studentData);
+      student = JSON.parse(decodeURIComponent(studentData));
+      console.log("Parsed student object:", student);
+    } catch (error) {
+      console.error("Error parsing student data:", error);
+      student = {
+        name: "Satvika",
+        rollNumber: "23241A05P7",
+        photo: "/uploads/harshitha.jpg",
+        subjects: [
+          { name: "Mathematics", date: "2025-05-01" },
+          { name: "Physics", date: "2025-05-02" },
+          { name: "Chemistry", date: "2025-05-03" },
+          { name: "Java Programming Lab", date: "2025-05-04" },
+          { name: "Data Structures", date: "2025-05-05" },
+          { name: "Operating Systems", date: "2025-05-06" },
+          { name: "Database Systems", date: "2025-05-07" }
+        ]
+      };
+      console.log("Using fallback student data:", student);
     }
 
-    const qrData = JSON.stringify({
-      name: student.name,
-      rollNumber: student.rollNumber
-    });
-    new QRCode(document.getElementById("qrCode"), {
-      text: qrData,
-      width: 128,
-      height: 128,
-      colorDark: "#581C87",
-      colorLight: "#FFFFFF"
-    });
+    // Wait for photo and QR code to load
+    const studentPhoto = document.getElementById("studentPhoto");
+    const qrCodeDiv = document.getElementById("qrCode");
 
-    // Update QR code in database
-    fetch('http://localhost:5000/api/update-qrcode', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rollNumber: student.rollNumber, qrCode: qrData })
-    }).then(response => response.json())
-      .then(data => console.log('QR Code updated:', data))
-      .catch(error => console.error('Error updating QR Code:', error));
-
-      async function downloadPDF() {
-  const { jsPDF } = window.jspdf;
-  const ticket = document.getElementById("ticket");
-  const canvas = await html2canvas(ticket, {
-    useCORS: true,
-    allowTaint: false,
-    backgroundColor: '#FFFFFF'
-  });
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF();
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const ticketWidth = pdfWidth * 0.7;
-  const ticketHeight = (canvas.height * ticketWidth) / canvas.width;
-  const x = (pdfWidth - ticketWidth) / 2;
-  const y = 20;
-  pdf.addImage(imgData, "PNG", x, y, ticketWidth, ticketHeight);
-
-  pdf.save(`${student.rollNumber}_hallticket.pdf`);
-
-  try {
-    const response = await fetch('http://localhost:5000/api/send-email', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    email: student.email, // Ensure this is correctly populated
-    subject: 'Your Hall Ticket', // Ensure this is correctly populated
-    message: `Dear ${student.name},\n\nYour hallticket has been successfully downloaded.Roll Number: ${student.rollNumber}.\n\nBest regards,\nGRIET` // Ensure this is correctly populated
-  })
-});
-
-    if (response.ok) {
-      alert('Hall ticket details sent to your email!');
+    // Populate student photo
+    if (student.photo) {
+      studentPhoto.src = `http://localhost:5000${student.photo}`;
     } else {
-      const errorData = await response.json();
-      alert('Failed to send email: ' + errorData.error);
+      console.warn("Student photo not found in data");
     }
-  } catch (error) {
-    console.error('Error sending email:', error);
-    alert('Something went wrong while sending the email.');
-  }
-}
 
+    // Populate candidate details
+    document.getElementById("displayName").textContent = student.name || "[Name Not Loaded]";
+    
 
+    // Populate subjects into multiple Theory tables
+    const theoryTablesContainer = document.getElementById("theoryTables");
+    if (Array.isArray(student.subjects) && student.subjects.length > 0) {
+      // Split subjects into chunks of 6
+      const subjects = student.subjects;
+      const chunkSize = 6;
+      for (let i = 0; i < subjects.length; i += chunkSize) {
+        const chunk = subjects.slice(i, i + chunkSize);
+        // Create a new table for this chunk
+        const tableDiv = document.createElement("div");
+        tableDiv.innerHTML = `
+          <h4 class="text-xs font-semibold text-slate-500 mb-0.5">Theory (10:00 AM - 01:00 PM)</h4>
+          <div>
+            <table class="w-48 border-collapse">
+              <thead>
+                <tr class="bg-slate-300">
+                  <th class="border border-slate-200 p-px text-sm">Subject</th>
+                  <th class="border border-slate-200 p-px text-sm">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${chunk.map(subject => `
+                  <tr>
+                    <td class="border border-slate-200 p-px text-sm">${subject.name}</td>
+                    <td class="border border-slate-200 p-px text-sm">${subject.date ? new Date(subject.date).toISOString().split('T')[0] : 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        theoryTablesContainer.appendChild(tableDiv);
+      }
+    } else {
+      console.warn("No subjects found in student data:", student.subjects);
+      theoryTablesContainer.innerHTML = `
+        <div>
+          <h4 class="text-xs font-semibold text-slate-500 mb-0.5">Theory (10:00 AM - 01:00 PM)</h4>
+          <div>
+            <table class="w-48 border-collapse">
+              <thead>
+                <tr class="bg-slate-300">
+                  <th class="border border-slate-200 p-px text-sm">Subject</th>
+                  <th class="border border-slate-200 p-px text-sm">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="2" class="text-center text-sm text-gray-500">No Theory Subjects Loaded</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // Generate QR code
+    if (student.name && student.rollNumber) {
+      const qrData = JSON.stringify({
+        name: student.name,
+        rollNumber: student.rollNumber
+      });
+      try {
+        new QRCode(qrCodeDiv, {
+          text: qrData,
+          width: 80,
+          height: 80,
+          colorDark: "#000000",
+          colorLight: "#FFFFFF"
+        });
+        console.log("QR Code generated with data:", qrData);
+
+        // Update QR code in database
+        fetch('http://localhost:5000/api/update-qrcode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rollNumber: student.rollNumber, qrCode: qrData })
+        })
+          .then(response => response.json())
+          .then(data => console.log('QR Code updated in database:', data))
+          .catch(error => console.error('Error updating QR Code in database:', error));
+      } catch (error) {
+        console.error("Error generating QR Code:", error);
+        qrCodeDiv.innerHTML = "<p class='text-sm text-gray-500'>QR Code Failed to Load</p>";
+      }
+    } else {
+      console.warn("Cannot generate QR Code: Missing name or rollNumber", student);
+      qrCodeDiv.innerHTML = "<p class='text-sm text-gray-500'>QR Code Not Loaded</p>";
+    }
+
+    async function downloadPDF() {
+      const errorMessage = document.getElementById("downloadError");
+      const manualDownloadLink = document.getElementById("manualDownload");
+      errorMessage.classList.add("hidden");
+      manualDownloadLink.classList.add("hidden");
+
+      try {
+        // Check if libraries are loaded
+        if (!window.html2canvas || !window.jspdf) {
+          throw new Error("Required libraries (html2canvas or jsPDF) not loaded.");
+        }
+
+        const { jsPDF } = window.jspdf;
+        const ticket = document.getElementById("ticket");
+
+        // Wait for photo and QR code to load
+        await Promise.all([
+          new Promise(resolve => {
+            if (studentPhoto.complete && studentPhoto.naturalHeight !== 0) {
+              resolve();
+            } else {
+              studentPhoto.onload = resolve;
+              studentPhoto.onerror = () => {
+                console.warn("Student photo failed to load, proceeding without it.");
+                resolve();
+              };
+            }
+          }),
+          new Promise(resolve => {
+            setTimeout(resolve, 500); // Wait for QR code to render
+          })
+        ]);
+
+        console.log("Capturing hall ticket content...");
+        const canvas = await html2canvas(ticket, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#FFFFFF',
+          logging: true
+        });
+        console.log("Canvas captured successfully:", canvas);
+
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+        const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+        const maxHeight = pdfHeight / 2; // 148.5mm (top half of the page)
+        let ticketWidth = pdfWidth * 0.8; // 80% of page width
+        let ticketHeight = (canvas.height * ticketWidth) / canvas.width;
+
+        // Constrain height to fit within the top half (148.5mm), preserving aspect ratio
+        if (ticketHeight > maxHeight) {
+          ticketHeight = maxHeight;
+          ticketWidth = (canvas.width * ticketHeight) / canvas.height;
+        }
+
+        const x = (pdfWidth - ticketWidth) / 2; // Center horizontally
+        const y = 10; // Start 10mm from the top
+
+        // Add bounding box
+        pdf.setLineWidth(0.5);
+        pdf.rect(x - 2, y - 2, ticketWidth + 4, ticketHeight + 4);
+
+        // Add image
+        pdf.addImage(imgData, "PNG", x, y, ticketWidth, ticketHeight);
+
+        // Attempt automatic download
+        try {
+          pdf.save(`${student.rollNumber || "hallticket"}_hallticket.pdf`);
+          console.log("PDF downloaded successfully.");
+        } catch (saveError) {
+          console.error("Automatic download failed:", saveError);
+          // Fallback: Provide a manual download link
+          const pdfBlob = pdf.output('blob');
+          const url = URL.createObjectURL(pdfBlob);
+          manualDownloadLink.href = url;
+          manualDownloadLink.download = `${student.rollNumber || "hallticket"}_hallticket.pdf`;
+          manualDownloadLink.classList.remove("hidden");
+          manualDownloadLink.textContent = "Automatic download failed. Click here to download manually.";
+        }
+      } catch (error) {
+        console.error("Error generating PDF:", error);
+        errorMessage.classList.remove("hidden");
+      }
+    }
   </script>
 </body>
 </html>
