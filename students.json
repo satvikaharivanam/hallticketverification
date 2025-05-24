@@ -1,0 +1,18 @@
+{
+  "name": "Indhu",
+  "rollNumber": "23241A05R8",
+  "subjects": [
+    {
+      "name": "Mathematics",
+      "date": "2025-01-10"
+    },
+    {
+      "name": "Physics",
+      "date": "2025-01-12"
+    }
+  ],
+  "attendance": [],
+  "qrCode": "{\"name\":\"Indhu\",\"rollNumber\":\"23241A05R8\"}",
+  "email": "indhujareddy2005@gmail.com",
+  "photo": "uploads/indhu.jpg"
+}

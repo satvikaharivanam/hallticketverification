@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Add Students</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body class="bg-white text-slate-700 min-h-screen">
+  <!-- Navigation Bar -->
+  <nav class="bg-slate-500 text-white fixed w-full top-0 z-50 shadow-md">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center">
+        <img src="/Uploads/logo.png" alt="Institute Logo" class="h-10 mr-3">
+        <span class="text-xl font-semibold">Hall Ticket System</span>
+      </div>
+      <div class="hidden md:flex space-x-6">
+        <a href="admin.html" class="hover:text-slate-200 transition">Home</a>
+        <a href="admin-login.html" class="hover:text-slate-200 transition">Admin</a>
+        <a href="#contact" class="hover:text-slate-200 transition">Contact</a>
+      </div>
+      <button id="menuToggle" class="md:hidden focus:outline-none">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden bg-slate-300">
+      <a href="admin.html" class="block px-4 py-2 hover:bg-slate-400">Home</a>
+      <a href="admin-login.html" class="block px-4 py-2 hover:bg-slate-400">Admin</a>
+      <a href="#contact" class="block px-4 py-2 hover:bg-slate-400">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Admin Panel -->
+  <div class="container mx-auto p-4 pt-20">
+    <h1 class="text-3xl font-bold text-center text-slate-500 mb-6">Admin - Add Students</h1>
+
+    <!-- Manual Form -->
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto mb-8">
+      <h2 class="text-2xl font-semibold text-slate-500 mb-4">Add Student Manually</h2>
+      <form id="studentForm" enctype="multipart/form-data">
+        <div class="mb-4">
+          <label class="block text-slate-700 font-medium mb-1" for="name">Name</label>
+          <input type="text" id="name" name="name" class="w-full p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-slate-700 font-medium mb-1" for="rollNumber">Roll Number</label>
+          <input type="text" id="rollNumber" name="rollNumber" class="w-full p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-slate-700 font-medium mb-1" for="email">Email</label>
+          <input type="email" id="email" name="email" class="w-full p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-slate-700 font-medium mb-1" for="photo">Photo</label>
+          <input type="file" id="photo" name="photo" accept="image/*" class="w-full p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400">
+        </div>
+        <div class="mb-4">
+          <label class="block text-slate-700 font-medium mb-1">Subjects</label>
+          <div id="subjectsList" class="space-y-2">
+            <div class="subject-entry flex space-x-2">
+              <input type="text" name="subjectName" placeholder="Subject Name" class="w-1/2 p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+              <input type="date" name="subjectDate" class="w-1/2 p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+              <button type="button" class="remove-subject bg-slate-500 text-white px-2 py-1 rounded hover:bg-slate-600">Remove</button>
+            </div>
+          </div>
+          <button type="button" id="addSubject" class="mt-2 bg-slate-500 text-white px-4 py-2 rounded hover:bg-slate-600">Add Subject</button>
+        </div>
+        <button type="submit" class="w-full bg-slate-500 text-white px-4 py-2 rounded hover:bg-slate-600">Add Student</button>
+      </form>
+      <p id="formMessage" class="mt-2 text-center"></p>
+    </div>
+
+    <!-- CSV Upload -->
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
+      <h2 class="text-2xl font-semibold text-slate-500 mb-4">Upload Students via CSV</h2>
+      <form id="csvForm" enctype="multipart/form-data">
+        <div class="mb-4">
+          <label class="block text-slate-700 font-medium mb-1" for="csvFile">CSV File</label>
+          <input type="file" id="csvFile" name="csvFile" accept=".csv" class="w-full p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+        </div>
+        <button type="submit" class="w-full bg-slate-500 text-white px-4 py-2 rounded hover:bg-slate-600">Upload CSV</button>
+      </form>
+      <p id="csvMessage" class="mt-2 text-center"></p>
+    </div>
+  </div>
+
+  <script>
+    // Toggle mobile menu
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
+    menuToggle.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      console.log('Mobile menu toggled:', mobileMenu.classList.contains('hidden') ? 'Hidden' : 'Visible');
+    });
+
+    // Debug nav link clicks
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        console.log('Nav link clicked:', link.href);
+      });
+    });
+
+    // Check authentication on load
+    const urlParams = new URLSearchParams(window.location.search);
+    const credentials = JSON.parse(sessionStorage.getItem('adminCredentials') || '{}');
+    if (!urlParams.get('auth') || !credentials.username) {
+      window.location.href = '/admin-login.html';
+    }
+
+    // Dynamic subjects
+    const addSubjectBtn = document.getElementById('addSubject');
+    const subjectsList = document.getElementById('subjectsList');
+
+    addSubjectBtn.addEventListener('click', () => {
+      const div = document.createElement('div');
+      div.className = 'subject-entry flex space-x-2';
+      div.innerHTML = `
+        <input type="text" name="subjectName" placeholder="Subject Name" class="w-1/2 p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+        <input type="date" name="subjectDate" class="w-1/2 p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+        <button type="button" class="remove-subject bg-slate-500 text-white px-2 py-1 rounded hover:bg-slate-600">Remove</button>
+      `;
+      subjectsList.appendChild(div);
+    });
+
+    subjectsList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-subject')) {
+        if (subjectsList.children.length > 1) {
+          e.target.parentElement.remove();
+        }
+      }
+    });
+
+    // Manual form submission
+    const studentForm = document.getElementById('studentForm');
+    const formMessage = document.getElementById('formMessage');
+
+    studentForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(studentForm);
+      const subjects = [];
+      document.querySelectorAll('.subject-entry').forEach(entry => {
+        const name = entry.querySelector('[name="subjectName"]').value.trim();
+        const date = entry.querySelector('[name="subjectDate"]').value;
+        if (name && date) {
+          subjects.push({ name, date });
+        }
+      });
+
+      // Validate subjects
+      if (subjects.length === 0) {
+        formMessage.textContent = 'Please add at least one subject';
+        formMessage.className = 'text-red-600';
+        return;
+      }
+
+      // Add admin credentials from sessionStorage
+      formData.append('username', credentials.username);
+      formData.append('password', credentials.password);
+      formData.append('subjects', JSON.stringify(subjects));
+
+      // Debug: Log FormData
+      console.log('Submitting FormData:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/add-student', {
+          method: 'POST',
+          body: formData
+        });
+        console.log('Response status:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+
+        const contentType = response.headers.get('content-type');
+        let data;
+
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          throw new Error(`Invalid server response: ${text || 'Empty response'}`);
+        }
+
+        if (response.ok) {
+          formMessage.textContent = data.message;
+          formMessage.className = 'text-green-600';
+          studentForm.reset();
+          subjectsList.innerHTML = `
+            <div class="subject-entry flex space-x-2">
+              <input type="text" name="subjectName" placeholder="Subject Name" class="w-1/2 p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+              <input type="date" name="subjectDate" class="w-1/2 p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400" required>
+              <button type="button" class="remove-subject bg-slate-500 text-white px-2 py-1 rounded hover:bg-slate-600">Remove</button>
+            </div>
+          `;
+        } else {
+          formMessage.textContent = data.error || 'Failed to add student';
+          formMessage.className = 'text-red-600';
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+        formMessage.textContent = 'Error: ' + error.message;
+        formMessage.className = 'text-red-600';
+      }
+    });
+
+    // CSV form submission
+    const csvForm = document.getElementById('csvForm');
+    const csvMessage = document.getElementById('csvMessage');
+
+    csvForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(csvForm);
+
+      // Add admin credentials from sessionStorage
+      formData.append('username', credentials.username);
+      formData.append('password', credentials.password);
+
+      // Debug: Log FormData
+      console.log('Submitting CSV FormData:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/add-students-csv', {
+          method: 'POST',
+          body: formData
+        });
+        console.log('CSV Response status:', response.status);
+        console.log('CSV Response headers:', [...response.headers.entries()]);
+
+        const contentType = response.headers.get('content-type');
+        let data;
+
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON CSV response:', text);
+          throw new Error(`Invalid server response: ${text || 'Empty response'}`);
+        }
+
+        if (response.ok) {
+          csvMessage.textContent = data.message;
+          csvMessage.className = 'text-green-600';
+          csvForm.reset();
+        } else {
+          csvMessage.textContent = data.error || 'Failed to add students';
+          csvMessage.className = 'text-red-600';
+        }
+      } catch (error) {
+        console.error('CSV Fetch error:', error);
+        csvMessage.textContent = 'Error: ' + error.message;
+        csvMessage.className = 'text-red-600';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Login - Hall Ticket System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body class="bg-white text-slate-700 min-h-screen">
+  <!-- Navigation Bar -->
+  <nav class="bg-slate-500 text-white fixed w-full top-0 z-50 shadow-md">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center">
+        <img src="/Uploads/logo.png" alt="Institute Logo" class="h-10 mr-3">
+        <span class="text-xl font-semibold">Hall Ticket System</span>
+      </div>
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex space-x-6">
+        <a href="admin.html" class="hover:text-slate-200 transition">Home</a>
+        <a href="admin-login.html" class="hover:text-slate-200 transition">Admin</a>
+        <a href="#contact" class="hover:text-slate-200 transition">Contact</a>
+      </div>
+      <!-- Mobile Menu Button -->
+      <button id="menuToggle" class="md:hidden focus:outline-none">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="hidden md:hidden bg-slate-300">
+      <a href="admin.html" class="block px-4 py-2 hover:bg-slate-400">Home</a>
+      <a href="admin-login.html" class="block px-4 py-2 hover:bg-slate-400">Admin</a>
+      <a href="#contact" class="block px-4 py-2 hover:bg-slate-400">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Login Form -->
+  <div class="container mx-auto p-4 pt-20">
+    <h1 class="text-3xl font-bold text-center text-slate-500 mb-6">Student Login</h1>
+    <form id="loginForm" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
+      <div class="mb-4">
+        <input id="studentName" type="text" placeholder="Name" required
+               class="w-full p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400">
+      </div>
+      <div class="mb-6">
+        <input id="studentRoll" type="text" placeholder="Roll Number" required
+               class="w-full p-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-slate-400">
+      </div>
+      <button type="submit"
+              class="w-full bg-slate-500 text-white p-2 rounded hover:bg-slate-600 transition duration-200">
+        Generate Hall Ticket
+      </button>
+      <p id="message" class="mt-4 text-center text-sm"></p>
+    </form>
+  </div>
+
+  <script>
+    // Toggle mobile menu
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
+    menuToggle.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      console.log('Mobile menu toggled:', mobileMenu.classList.contains('hidden') ? 'Hidden' : 'Visible');
+    });
+
+    // Debug nav link clicks
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        console.log('Nav link clicked:', link.href);
+      });
+    });
+
+    // Form submission
+    document.getElementById('loginForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const name = document.getElementById('studentName').value.trim();
+      const rollNumber = document.getElementById('studentRoll').value.trim();
+      const messageEl = document.getElementById('message');
+
+      console.log('Submitting login:', { name, rollNumber });
+
+      try {
+        const response = await fetch('http://localhost:5001/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, rollNumber })
+        });
+        console.log('Response status:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+
+        const contentType = response.headers.get('content-type');
+        let data;
+
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          throw new Error(`Invalid server response: ${text || 'Empty response'}`);
+        }
+
+        if (response.ok) {
+          messageEl.textContent = 'Login successful! Redirecting...';
+          messageEl.className = 'text-green-600';
+          setTimeout(() => {
+            window.location.href = `hallticket.html?student=${encodeURIComponent(JSON.stringify(data))}`;
+          }, 1000);
+        } else {
+          messageEl.textContent = data.error || 'Invalid credentials. Please check your name and roll number.';
+          messageEl.className = 'text-red-600';
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+        messageEl.textContent = 'Error: ' + error.message;
+        messageEl.className = 'text-red-600';
+      }
+    });
+  </script>
+</body>
+</html>
